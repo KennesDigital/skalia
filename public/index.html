@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bild-Verarbeitung</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                   'Helvetica Neue', Arial, sans-serif;
+      background: #f0f2f5;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 620px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+    }
+
+    /* ── Header ── */
+    .header { margin-bottom: 32px; }
+    .header h1 { font-size: 22px; font-weight: 700; color: #111; }
+    .header p  { font-size: 13px; color: #777; margin-top: 4px; }
+
+    /* ── Form groups ── */
+    .form-group { margin-bottom: 22px; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 7px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 11px 14px;
+      border: 2px solid #dde1e8;
+      border-radius: 9px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .18s;
+    }
+    input[type="text"]:focus { border-color: #4f8ef7; }
+    input[type="text"].invalid { border-color: #e74c3c; }
+
+    .hint { font-size: 12px; color: #999; margin-top: 5px; }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      border: 2px dashed #c8cfd9;
+      border-radius: 12px;
+      padding: 44px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .18s, background .18s;
+      background: #fafbfc;
+      user-select: none;
+    }
+    .drop-zone:hover,
+    .drop-zone.dragover { border-color: #4f8ef7; background: #f0f5ff; }
+
+    .drop-zone .dz-icon { font-size: 44px; line-height: 1; }
+    .drop-zone .dz-main {
+      font-size: 14px; color: #555; margin-top: 10px; line-height: 1.5;
+    }
+    .drop-zone .dz-main strong { color: #4f8ef7; }
+    .drop-zone .dz-sub {
+      font-size: 12px; color: #999; margin-top: 4px;
+    }
+    .drop-zone .dz-count {
+      margin-top: 10px; font-size: 13px; font-weight: 600; color: #333;
+      min-height: 18px;
+    }
+
+    input[type="file"] { display: none; }
+
+    /* ── File list ── */
+    .file-list {
+      max-height: 160px;
+      overflow-y: auto;
+      margin-top: 10px;
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+      display: none;
+    }
+    .file-list.visible { display: block; }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid #f0f2f5;
+    }
+    .file-item:last-child { border-bottom: none; }
+    .file-item .fi-name {
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 320px;
+    }
+    .file-item .fi-size { color: #999; margin-left: 8px; flex-shrink: 0; }
+    .file-item .fi-remove {
+      cursor: pointer; color: #bbb; font-size: 14px;
+      margin-left: 8px; flex-shrink: 0; line-height: 1;
+      transition: color .15s;
+    }
+    .file-item .fi-remove:hover { color: #e74c3c; }
+
+    /* ── Submit button ── */
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: #4f8ef7;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .18s, opacity .18s;
+      margin-top: 4px;
+      letter-spacing: .02em;
+    }
+    .btn-submit:hover:not(:disabled) { background: #3a7be0; }
+    .btn-submit:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* ── Progress section ── */
+    #section-progress { display: none; }
+    #section-progress.visible { display: block; }
+
+    .progress-bar-wrap {
+      height: 8px;
+      background: #e9ecef;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4f8ef7, #6ec6ff);
+      border-radius: 99px;
+      transition: width .35s ease;
+      width: 0%;
+    }
+    .progress-msg {
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+      min-height: 18px;
+      margin-bottom: 18px;
+    }
+
+    /* ── Step list ── */
+    .steps { display: flex; flex-direction: column; gap: 6px; }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #aaa;
+      background: #fafbfc;
+      border: 1px solid #f0f2f5;
+      transition: color .2s, background .2s, border-color .2s;
+    }
+    .step.active {
+      color: #1a6ef7;
+      background: #f0f6ff;
+      border-color: #c5daff;
+    }
+    .step.done {
+      color: #1a8a46;
+      background: #f0fff5;
+      border-color: #b5e8c9;
+    }
+    .step.error {
+      color: #c0392b;
+      background: #fff5f5;
+      border-color: #f5c6c6;
+    }
+
+    .step-icon { font-size: 16px; width: 20px; text-align: center; }
+    .step-label { font-weight: 500; }
+
+    /* ── Error box ── */
+    .error-box {
+      display: none;
+      background: #fff5f5;
+      border: 1px solid #f5c6c6;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #c0392b;
+      margin-top: 16px;
+      line-height: 1.5;
+    }
+    .error-box.visible { display: block; }
+
+    /* ── Download box ── */
+    #section-download { display: none; }
+    #section-download.visible { display: block; }
+
+    .download-box {
+      background: #f0fff5;
+      border: 1px solid #b5e8c9;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    .download-box .db-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a8a46;
+    }
+    .download-box .db-sub {
+      font-size: 13px;
+      color: #555;
+      margin-top: 5px;
+    }
+
+    .btn-download {
+      display: inline-block;
+      background: #22c55e;
+      color: #fff;
+      text-decoration: none;
+      padding: 13px 36px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-top: 16px;
+      transition: background .18s;
+    }
+    .btn-download:hover { background: #16a34a; }
+
+    .btn-reset {
+      display: block;
+      width: 100%;
+      background: none;
+      border: 2px solid #dde1e8;
+      border-radius: 9px;
+      padding: 10px;
+      color: #777;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: border-color .18s, color .18s;
+    }
+    .btn-reset:hover { border-color: #4f8ef7; color: #4f8ef7; }
+
+    /* ── Scrollbar ── */
+    .file-list::-webkit-scrollbar { width: 5px; }
+    .file-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Bild-Verarbeitung</h1>
+    <p>Bilder hochladen &rarr; auf 885 px verkleinern &rarr; Originale in Dropbox sichern</p>
+  </div>
+
+  <!-- ── Upload form ───────────────────────────────────────────── -->
+  <div id="section-form">
+
+    <div class="form-group">
+      <label for="orderNumber">Auftragsnummer</label>
+      <input type="text" id="orderNumber" placeholder="A-202604629"
+             autocomplete="off" spellcheck="false" maxlength="30">
+      <p class="hint">Format: A-&lt;Ziffernfolge&gt; &nbsp;(z.&thinsp;B.&nbsp;A-202604629)</p>
+    </div>
+
+    <div class="form-group">
+      <label>Bilder</label>
+      <div class="drop-zone" id="dropZone" role="button" tabindex="0"
+           aria-label="Bilder auswählen oder hierher ziehen">
+        <div class="dz-icon">🖼️</div>
+        <p class="dz-main">Bilder hierher ziehen oder <strong>klicken zum Auswählen</strong></p>
+        <p class="dz-sub">JPEG &middot; PNG &middot; WebP &middot; TIFF &middot; BMP &nbsp;&bull;&nbsp; bis 200&thinsp;MB / Datei</p>
+        <p class="dz-count" id="fileCount"></p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple>
+
+      <div class="file-list" id="fileList"></div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" disabled>
+      Verarbeiten starten
+    </button>
+
+    <div class="error-box" id="formError"></div>
+  </div>
+
+  <!-- ── Progress ─────────────────────────────────────────────── -->
+  <div id="section-progress">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <p class="progress-msg" id="progressMsg">Wird gestartet…</p>
+
+    <div class="steps">
+      <div class="step" id="step-upload">
+        <span class="step-icon" id="icon-upload">&#9634;</span>
+        <span class="step-label">Upload auf Server</span>
+      </div>
+      <div class="step" id="step-ninox">
+        <span class="step-icon" id="icon-ninox">&#9634;</span>
+        <span class="step-label">Auftrag in Ninox suchen</span>
+      </div>
+      <div class="step" id="step-dropbox">
+        <span class="step-icon" id="icon-dropbox">&#9634;</span>
+        <span class="step-label">Originale in Dropbox sichern</span>
+      </div>
+      <div class="step" id="step-resize">
+        <span class="step-icon" id="icon-resize">&#9634;</span>
+        <span class="step-label">Bilder auf 885 px verkleinern</span>
+      </div>
+      <div class="step" id="step-zip">
+        <span class="step-icon" id="icon-zip">&#9634;</span>
+        <span class="step-label">ZIP-Datei erstellen</span>
+      </div>
+    </div>
+
+    <div class="error-box" id="processError"></div>
+  </div>
+
+  <!-- ── Download ──────────────────────────────────────────────── -->
+  <div id="section-download">
+    <div class="download-box">
+      <p class="db-title">&#10003;&ensp;Fertig!</p>
+      <p class="db-sub" id="downloadSub"></p>
+      <a id="downloadLink" class="btn-download" href="#">&#8659;&ensp;ZIP herunterladen</a>
+      <button class="btn-reset" onclick="resetAll()">Neue Bilder verarbeiten</button>
+    </div>
+  </div>
+
+</div><!-- /.card -->
+
+<script>
+'use strict';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let selectedFiles = [];
+let activeSSE     = null;
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const $  = (id) => document.getElementById(id);
+const orderInput  = $('orderNumber');
+const dropZone    = $('dropZone');
+const fileInput   = $('fileInput');
+const fileCount   = $('fileCount');
+const fileList    = $('fileList');
+const submitBtn   = $('submitBtn');
+const formError   = $('formError');
+const progressBar = $('progressBar');
+const progressMsg = $('progressMsg');
+const processError= $('processError');
+const downloadLink= $('downloadLink');
+const downloadSub = $('downloadSub');
+
+// ── File selection ────────────────────────────────────────────────────────────
+dropZone.addEventListener('click',   () => fileInput.click());
+dropZone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+
+dropZone.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  addFiles([...e.dataTransfer.files]);
+});
+
+fileInput.addEventListener('change', () => addFiles([...fileInput.files]));
+
+function addFiles (files) {
+  const images = files.filter(f => f.type.startsWith('image/'));
+  // Deduplicate by name+size
+  const existing = new Set(selectedFiles.map(f => f.name + f.size));
+  images.forEach(f => { if (!existing.has(f.name + f.size)) selectedFiles.push(f); });
+  renderFileList();
+  updateState();
+}
+
+function removeFile (idx) {
+  selectedFiles.splice(idx, 1);
+  renderFileList();
+  updateState();
+}
+
+function renderFileList () {
+  if (selectedFiles.length === 0) {
+    fileList.classList.remove('visible');
+    fileList.innerHTML = '';
+    fileCount.textContent = '';
+    return;
+  }
+
+  const totalBytes = selectedFiles.reduce((s, f) => s + f.size, 0);
+  fileCount.textContent =
+    `${selectedFiles.length} Bild${selectedFiles.length !== 1 ? 'er' : ''} ausgewählt` +
+    ` – ${fmtBytes(totalBytes)} gesamt`;
+
+  fileList.innerHTML = selectedFiles.map((f, i) => `
+    <div class="file-item">
+      <span class="fi-name" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
+      <span class="fi-size">${fmtBytes(f.size)}</span>
+      <span class="fi-remove" onclick="removeFile(${i})" title="Entfernen">&times;</span>
+    </div>`).join('');
+  fileList.classList.add('visible');
+}
+
+// ── Validation & submit button ────────────────────────────────────────────────
+orderInput.addEventListener('input', () => {
+  const v = orderInput.value.trim();
+  orderInput.classList.toggle('invalid', v.length > 0 && !/^A-\d+$/.test(v));
+  updateState();
+});
+
+function updateState () {
+  const validOrder = /^A-\d+$/.test(orderInput.value.trim());
+  submitBtn.disabled = !(validOrder && selectedFiles.length > 0);
+}
+
+// ── Form submit ───────────────────────────────────────────────────────────────
+submitBtn.addEventListener('click', handleSubmit);
+
+async function handleSubmit () {
+  hideError(formError);
+  const orderNumber = orderInput.value.trim();
+
+  if (!/^A-\d+$/.test(orderNumber)) {
+    return showError(formError, 'Ungültiges Format – erwartet: A-XXXXXXXXX');
+  }
+  if (selectedFiles.length === 0) {
+    return showError(formError, 'Bitte mindestens ein Bild auswählen.');
+  }
+
+  show('section-progress');
+  hide('section-form');
+  hide('section-download');
+  hideError(processError);
+
+  setStep('upload', 'active');
+  setProgress(5, 'Bilder werden hochgeladen…');
+
+  const formData = new FormData();
+  formData.append('orderNumber', orderNumber);
+  selectedFiles.forEach(f => formData.append('images', f));
+
+  let jobId;
+  try {
+    jobId = await uploadFiles(formData);
+  } catch (err) {
+    setStep('upload', 'error');
+    showError(processError, 'Upload fehlgeschlagen: ' + err.message);
+    show('section-form');
+    return;
+  }
+
+  setStep('upload', 'done');
+  setProgress(30, 'Upload abgeschlossen – starte Verarbeitung…');
+  connectSSE(jobId, orderNumber);
+}
+
+function uploadFiles (formData) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 25) + 5;
+        setProgress(pct, `Lade hoch … ${fmtBytes(e.loaded)} / ${fmtBytes(e.total)}`);
+      }
+    };
+
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status === 200 && data.jobId) {
+          resolve(data.jobId);
+        } else {
+          reject(new Error(data.error || `Server-Fehler ${xhr.status}`));
+        }
+      } catch {
+        reject(new Error('Ungültige Serverantwort'));
+      }
+    };
+
+    xhr.onerror   = () => reject(new Error('Netzwerkfehler beim Upload'));
+    xhr.ontimeout = () => reject(new Error('Upload-Timeout'));
+    xhr.timeout   = 30 * 60 * 1000;   // 30 min for very large batches
+
+    xhr.open('POST', '/api/upload');
+    xhr.send(formData);
+  });
+}
+
+// ── SSE – processing progress ─────────────────────────────────────────────────
+function connectSSE (jobId, orderNumber) {
+  if (activeSSE) { activeSSE.close(); activeSSE = null; }
+
+  const sse = new EventSource(`/api/status/${jobId}`);
+  activeSSE = sse;
+
+  sse.onmessage = (e) => {
+    let evt;
+    try { evt = JSON.parse(e.data); } catch { return; }
+
+    if (evt.type === 'progress') {
+      if (evt.step) setStep(evt.step, 'active');
+      if (evt.percent != null) setProgress(evt.percent, evt.message);
+
+    } else if (evt.type === 'complete') {
+      sse.close(); activeSSE = null;
+      setProgress(100, 'Fertig!');
+      ['ninox','dropbox','resize','zip'].forEach(s => setStep(s, 'done'));
+
+      downloadLink.href = evt.downloadUrl;
+      downloadSub.textContent =
+        `${selectedFiles.length} Bild${selectedFiles.length !== 1 ? 'er' : ''} für Auftrag ${orderNumber} bereit.`;
+
+      hide('section-progress');
+      show('section-download');
+
+    } else if (evt.type === 'error') {
+      sse.close(); activeSSE = null;
+      if (evt.step) setStep(evt.step, 'error');
+      showError(processError, evt.message);
+      show('section-form');
+    }
+  };
+
+  sse.onerror = () => {
+    sse.close(); activeSSE = null;
+    showError(processError, 'Verbindung zum Server unterbrochen. Bitte erneut versuchen.');
+    show('section-form');
+  };
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetAll () {
+  if (activeSSE) { activeSSE.close(); activeSSE = null; }
+
+  selectedFiles = [];
+  fileInput.value = '';
+  orderInput.value = '';
+  orderInput.classList.remove('invalid');
+  renderFileList();
+  updateState();
+  hideError(formError);
+  hideError(processError);
+
+  setProgress(0, '');
+  ['upload','ninox','dropbox','resize','zip'].forEach(s => setStep(s, ''));
+
+  hide('section-progress');
+  hide('section-download');
+  show('section-form');
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+const STEP_ICONS = { '': '&#9634;', active: '⏳', done: '&#10003;', error: '&#10007;' };
+
+function setStep (name, state) {
+  const el   = $('step-' + name);
+  const icon = $('icon-' + name);
+  if (!el) return;
+  el.className   = 'step' + (state ? ' ' + state : '');
+  icon.innerHTML = STEP_ICONS[state] || STEP_ICONS[''];
+}
+
+function setProgress (pct, msg) {
+  progressBar.style.width = Math.min(100, pct) + '%';
+  if (msg != null) progressMsg.textContent = msg;
+}
+
+function show (id)    { $(id).classList.add('visible');    $(id).style.display = ''; }
+function hide (id)    { $(id).classList.remove('visible'); $(id).style.display = 'none'; }
+function showError (el, msg) { el.textContent = '⚠ ' + msg; el.classList.add('visible'); }
+function hideError (el)      { el.classList.remove('visible'); el.textContent = ''; }
+
+function fmtBytes (b) {
+  if (b < 1024)              return b + ' B';
+  if (b < 1024 * 1024)       return (b / 1024).toFixed(1) + ' KB';
+  if (b < 1024 ** 3)         return (b / 1024 ** 2).toFixed(1) + ' MB';
+  return (b / 1024 ** 3).toFixed(2) + ' GB';
+}
+
+function escHtml (s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+// ── Init: hide sections that start hidden via display:none ────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  $('section-progress').style.display = 'none';
+  $('section-download').style.display = 'none';
+});
+</script>
+</body>
+</html>
