@@ -1,0 +1,12 @@
+[
+  {
+    "id": "46b32914-f362-477d-8754-33be2268595d",
+    "name": "Testprojekt",
+    "client": "Mustermann GmbH",
+    "description": "Test",
+    "createdAt": "2026-04-14T09:24:30.568Z",
+    "updatedAt": "2026-04-14T09:24:30.568Z",
+    "tables": [],
+    "diagramLayout": {}
+  }
+]

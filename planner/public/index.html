@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ninox Datenbank Planer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="8" fill="url(#lg)"/>
+          <text x="6" y="22" font-size="16" font-weight="900" fill="white" font-family="sans-serif">N</text>
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#00C8FF"/><stop offset="1" stop-color="#0038D6"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">Ninox Planer</span>
+        <span class="brand-sub">DB-Konzeption</span>
+      </div>
+    </div>
+    <button class="btn-new-project" id="btn-new-project">+ Neues Projekt</button>
+    <div class="project-list" id="project-list">
+      <div class="empty-list">Noch keine Projekte</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main">
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <rect x="8" y="16" width="48" height="36" rx="6" fill="#DDE5F8"/>
+          <rect x="16" y="8" width="32" height="8" rx="4" fill="#0038D6" opacity=".4"/>
+          <rect x="16" y="28" width="20" height="3" rx="1.5" fill="#0038D6" opacity=".5"/>
+          <rect x="16" y="35" width="28" height="3" rx="1.5" fill="#0038D6" opacity=".3"/>
+          <rect x="16" y="42" width="16" height="3" rx="1.5" fill="#0038D6" opacity=".3"/>
+        </svg>
+      </div>
+      <h2>Kein Projekt ausgewählt</h2>
+      <p>Wähle ein Projekt aus der Seitenleiste oder erstelle ein neues.</p>
+      <button class="btn-primary" onclick="openProjectModal()">+ Neues Projekt erstellen</button>
+    </div>
+
+    <!-- Project view -->
+    <div id="project-view" style="display:none">
+      <div class="project-header" id="project-header">
+        <div class="project-header-left">
+          <h1 id="ph-name"></h1>
+          <span class="client-badge" id="ph-client"></span>
+        </div>
+        <div class="project-header-right">
+          <button class="btn-icon" title="Projekt bearbeiten" onclick="openProjectModal(true)">✎</button>
+          <button class="btn-icon btn-danger" title="Projekt löschen" onclick="confirmDeleteProject()">✕</button>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="tables">Tabellen</button>
+        <button class="tab-btn" data-tab="diagram">ER-Diagramm</button>
+        <button class="tab-btn" data-tab="estimate">Zeitschätzung</button>
+      </div>
+
+      <div class="tab-content">
+        <div id="tab-tables" class="tab-pane active"></div>
+        <div id="tab-diagram" class="tab-pane" style="display:none"></div>
+        <div id="tab-estimate" class="tab-pane" style="display:none"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+<div id="modal-overlay" class="modal-overlay" style="display:none" onclick="overlayClick(event)">
+
+  <!-- Project Modal -->
+  <div class="modal" id="modal-project" style="display:none">
+    <div class="modal-header">
+      <h3 id="modal-project-title">Neues Projekt</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Name <span class="req">*</span></label>
+        <input type="text" id="fp-name" placeholder="z.B. CRM-System" maxlength="80">
+        <span class="field-error" id="fp-name-err"></span>
+      </div>
+      <div class="form-group">
+        <label>Kunde</label>
+        <input type="text" id="fp-client" placeholder="z.B. Mustermann GmbH" maxlength="80">
+      </div>
+      <div class="form-group">
+        <label>Beschreibung</label>
+        <textarea id="fp-desc" rows="3" placeholder="Kurze Beschreibung des Projekts…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveProject()">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Table Modal -->
+  <div class="modal" id="modal-table" style="display:none">
+    <div class="modal-header">
+      <h3 id="modal-table-title">Neue Tabelle</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Name <span class="req">*</span></label>
+        <input type="text" id="ft-name" placeholder="z.B. Kunden" maxlength="60">
+        <span class="field-error" id="ft-name-err"></span>
+      </div>
+      <div class="form-group">
+        <label>Farbe</label>
+        <div class="color-swatches" id="ft-colors"></div>
+        <input type="hidden" id="ft-color" value="#0038D6">
+      </div>
+      <div class="form-group">
+        <label>Beschreibung</label>
+        <textarea id="ft-desc" rows="2" placeholder="Wofür wird diese Tabelle genutzt?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveTable()">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Field Modal -->
+  <div class="modal modal-wide" id="modal-field" style="display:none">
+    <div class="modal-header">
+      <h3 id="modal-field-title">Neues Feld</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group flex-2">
+          <label>Feldname <span class="req">*</span></label>
+          <input type="text" id="ff-name" placeholder="z.B. E-Mail-Adresse" maxlength="60">
+          <span class="field-error" id="ff-name-err"></span>
+        </div>
+        <div class="form-group flex-1">
+          <label>Feldtyp <span class="req">*</span></label>
+          <select id="ff-type" onchange="onFieldTypeChange()"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label>Pflichtfeld</label>
+          <label class="toggle"><input type="checkbox" id="ff-required"><span class="slider"></span></label>
+        </div>
+        <div class="form-group flex-3">
+          <label>Beschreibung</label>
+          <input type="text" id="ff-desc" placeholder="Wozu dient dieses Feld?">
+        </div>
+      </div>
+      <!-- default value -->
+      <div class="form-group" id="ff-default-wrap">
+        <label>Standardwert</label>
+        <input type="text" id="ff-default" placeholder="Standardwert (optional)">
+      </div>
+      <!-- choices -->
+      <div class="form-group" id="ff-choices-wrap" style="display:none">
+        <label>Auswahloptionen</label>
+        <div class="tag-input-wrap">
+          <div class="tag-list" id="ff-choice-tags"></div>
+          <input type="text" id="ff-choice-input" placeholder="Option eingeben + Enter" onkeydown="addChoiceOnEnter(event)">
+        </div>
+      </div>
+      <!-- reference table -->
+      <div class="form-group" id="ff-ref-wrap" style="display:none">
+        <label>Ziel-Tabelle <span class="req">*</span></label>
+        <select id="ff-ref-table"></select>
+      </div>
+      <!-- formula/button -->
+      <div class="form-group" id="ff-formula-wrap" style="display:none">
+        <label>Formel / Skript</label>
+        <textarea id="ff-formula" rows="3" class="mono" placeholder="Ninox-Formel oder -Skript…"></textarea>
+      </div>
+      <hr class="divider">
+      <div class="form-group">
+        <label>Anzeigebedingung <span class="hint-label">(Ninox-Formel)</span></label>
+        <textarea id="ff-condition" rows="2" class="mono" placeholder="z.B. Status = &quot;Aktiv&quot;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Trigger bei Änderung <span class="hint-label">(Ninox-Skript)</span></label>
+        <textarea id="ff-trigger" rows="3" class="mono" placeholder="z.B. let x := self; …"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveField()">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div class="modal modal-sm" id="modal-confirm" style="display:none">
+    <div class="modal-header">
+      <h3 id="modal-confirm-title">Löschen bestätigen</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="modal-confirm-msg"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-danger" id="modal-confirm-btn">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<script src="constants.js"></script>
+<script src="state.js"></script>
+<script src="api.js"></script>
+<script src="render.js"></script>
+<script src="modals.js"></script>
+<script src="diagram.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
