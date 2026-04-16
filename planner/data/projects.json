@@ -8,5 +8,311 @@
     "updatedAt": "2026-04-14T09:24:30.568Z",
     "tables": [],
     "diagramLayout": {}
+  },
+  {
+    "id": "da0dce8b-0b96-4da1-8736-33a784d67621",
+    "name": "CRM-System",
+    "client": "Muster AG",
+    "description": "Kundenverwaltung mit Aufträgen und Angeboten",
+    "createdAt": "2026-04-16T14:00:15.547Z",
+    "updatedAt": "2026-04-16T14:00:15.560Z",
+    "tables": [
+      {
+        "id": "t1",
+        "name": "Kunden",
+        "color": "#0038D6",
+        "description": "",
+        "fields": [
+          {
+            "id": "f1",
+            "name": "Firmenname",
+            "type": "text",
+            "required": true,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f2",
+            "name": "E-Mail",
+            "type": "email",
+            "required": true,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f3",
+            "name": "Telefon",
+            "type": "phone",
+            "required": false,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f4",
+            "name": "Status",
+            "type": "choice",
+            "required": true,
+            "choices": [
+              "Aktiv",
+              "Inaktiv",
+              "Interessent"
+            ],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": "Aktiv"
+          },
+          {
+            "id": "f5",
+            "name": "Erstellt am",
+            "type": "date",
+            "required": false,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "name": "Aufträge",
+        "color": "#7C3AED",
+        "description": "",
+        "fields": [
+          {
+            "id": "f6",
+            "name": "Auftragsnummer",
+            "type": "text",
+            "required": true,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f7",
+            "name": "Kunde",
+            "type": "reference",
+            "required": true,
+            "choices": [],
+            "referenceTable": "t1",
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f8",
+            "name": "Gesamtbetrag",
+            "type": "currency",
+            "required": false,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f9",
+            "name": "Status",
+            "type": "choice",
+            "required": true,
+            "choices": [
+              "Offen",
+              "In Bearbeitung",
+              "Abgeschlossen"
+            ],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "let k := linked('Kunden'); k.Status = 'Aktiv'",
+            "description": "",
+            "defaultValue": "Offen"
+          },
+          {
+            "id": "f10",
+            "name": "Auftragsdatum",
+            "type": "date",
+            "required": false,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "name": "Angebote",
+        "color": "#059669",
+        "description": "",
+        "fields": [
+          {
+            "id": "f11",
+            "name": "Titel",
+            "type": "text",
+            "required": true,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f12",
+            "name": "Kunde",
+            "type": "reference",
+            "required": true,
+            "choices": [],
+            "referenceTable": "t1",
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f13",
+            "name": "Nettobetrag",
+            "type": "currency",
+            "required": false,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f14",
+            "name": "MwSt.",
+            "type": "formula",
+            "required": false,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "Nettobetrag * 0.19",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f15",
+            "name": "Gültig bis",
+            "type": "date",
+            "required": false,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "name": "Kontakte",
+        "color": "#D97706",
+        "description": "",
+        "fields": [
+          {
+            "id": "f16",
+            "name": "Name",
+            "type": "text",
+            "required": true,
+            "choices": [],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f17",
+            "name": "Kunde",
+            "type": "reference",
+            "required": true,
+            "choices": [],
+            "referenceTable": "t1",
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          },
+          {
+            "id": "f18",
+            "name": "Rolle",
+            "type": "choice",
+            "required": false,
+            "choices": [
+              "Ansprechpartner",
+              "Entscheider",
+              "Techniker"
+            ],
+            "referenceTable": null,
+            "formula": "",
+            "displayCondition": "",
+            "triggerOnChange": "",
+            "description": "",
+            "defaultValue": ""
+          }
+        ]
+      }
+    ],
+    "diagramLayout": {
+      "t1": {
+        "x": 40,
+        "y": 80
+      },
+      "t2": {
+        "x": 340,
+        "y": 40
+      },
+      "t3": {
+        "x": 340,
+        "y": 300
+      },
+      "t4": {
+        "x": 640,
+        "y": 80
+      }
+    }
   }
 ]
